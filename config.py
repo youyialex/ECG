@@ -17,6 +17,8 @@ class Config:
 
         self.checkpoints = os.path.join('checkpoints/',self.model_name)
 
+        self.label_dir = 'data_label/'
+        
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         task = {

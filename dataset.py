@@ -3,7 +3,6 @@ import torch
 from torch.utils.data import Dataset,DataLoader
 import pandas as pd, numpy as np
 import os, wfdb
-from ECG.main import train
 
 from config import Config
 def scaling(X, sigma=0.1):
@@ -25,15 +24,13 @@ def transform(sig, train=False):
 
 
 class ECGDataset(Dataset):
-    def __init__(self,config:Config,phase,fold):
+    def __init__(self, config:Config, phase, fold):
         super(ECGDataset,self).__init__()
         self.task=config.task
         self.phase=phase
         self.data_dir=config.data_dir
-        self.sample_rate=config.sampling_frequency
         #read data reference
-        data=pd.read_csv(os.path.join('data_label/',config.task+'_sr'+\
-            str(config.sampling_frequency)+'.csv'))
+        data=pd.read_csv(os.path.join(config.label_dir,config.task+'.csv'))
         #filter [length path and fold]
         self.classes= data.columns.tolist()[1:-3]
         data=data[data['fold'].isin(fold)]
@@ -50,7 +47,7 @@ class ECGDataset(Dataset):
         row=self.data.iloc[index]
         #load data from disk
         ecg_data,_=wfdb.rdsamp(os.path.join(self.data_dir,row['path']))
-        length=int(self.data['length'])*self.sample_rate
+        length=int(self.data['length'])*int(self.data['sample_rate'])
         #Transform data
         ecg_data = transform(ecg_data, self.phase == 'train')
         #shape is (length, channels)

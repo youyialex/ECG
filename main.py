@@ -4,6 +4,7 @@ from config import Config
 from torch import nn, optim, seed
 import torch, random, os
 import utility as util
+from preprocess import preprocess_label
 import models
 from dataset import load_datasets
 def init_seed(seed):
@@ -122,10 +123,11 @@ def train(config=Config()):
 if __name__ =='__main__':
     for experiment in []:
         config=Config(experiment)
-
         os.makedirs(config.result_path , exist_ok=True)
         os.makedirs(config.checkpoints , exist_ok=True)
-
+        #preprocess label
+        os.makedirs(config.label_dir , exist_ok=True)
+        preprocess_label(config)
         print('# train device:', config.device)
         print('# batch_size: {}  Current Learning Rate: {}'.format( config.batch_size, config.lr))
 

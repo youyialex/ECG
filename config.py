@@ -7,7 +7,7 @@ class Config:
         self.seed = 42
         self.batch_size = 64
         self.num_workers = 4
-        
+        self.num_classes = 2
         self.model_name = 'lstm'
         self.result_path=os.path.join('result/',self.experiment)
 

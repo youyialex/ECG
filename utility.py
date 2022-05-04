@@ -46,8 +46,8 @@ def cal_test(y_true, y_pred):
 def select_diag_form_task(agg_dir,task):
     agg_df=pd.read_csv(agg_dir, index_col=0)
     if task == 'all':
-        agg_df['all'] = agg_df.index
-    if task in(['diagnostic_subclass','diagnostic_class']):
+        agg_df['all'] = 1
+    if task in(['diagnostic_subclass','diagnostic_class',]):
         agg_df = agg_df[agg_df['diagnostic'] == 1]
         classes = agg_df[task].unique().tolist()
     else:

@@ -154,8 +154,12 @@ if __name__ == '__main__':
             'CPSC': 'CPSC'
         }
     '''
-    for experiment in ['CPSC','ptb_all','ptb_diag','ptb_diag_sub','ptb_diag_super',
-        'ptb_form','ptb_rhythm']:
+    for experiment in [
+        # 'CPSC',
+        'ptb_all','ptb_diag','ptb_diag_sub',
+        'ptb_diag_super',
+        'ptb_form','ptb_rhythm'
+        ]:
         config = Config(experiment)
         # create folders to save result
         os.makedirs(config.result_path, exist_ok=True)

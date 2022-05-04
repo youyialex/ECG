@@ -32,7 +32,7 @@ class ECGDataset(Dataset):
         #read data reference
         data=pd.read_csv(os.path.join(config.label_dir,config.task+'.csv'))
         #filter [length path and fold]
-        self.classes= data.columns.tolist()[1:-3]
+        self.classes = config.classes
         data=data[data['fold'].isin(fold)]
         self.data=data
         #select leads
@@ -47,7 +47,7 @@ class ECGDataset(Dataset):
         row=self.data.iloc[index]
         #load data from disk
         ecg_data,_=wfdb.rdsamp(os.path.join(self.data_dir,row['path']))
-        length=int(self.data['length'])*int(self.data['sample_rate'])
+        length = 15000
         #Transform data
         ecg_data = transform(ecg_data, self.phase == 'train')
         #shape is (length, channels)
@@ -82,7 +82,10 @@ def load_datasets(config:Config):
     val_dataset = ECGDataset(config, phase='val', fold=val_folds)
     test_dataset = ECGDataset(config, phase='test', fold=test_folds)
     # return train_dataloader, val_dataloader, test_dataloader  
-    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=False,num_workers=config.num_workers, pin_memory=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False,num_workers=config.num_workers, pin_memory=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False,num_workers=config.num_workers, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size,
+                                  shuffle=False, num_workers=config.num_workers, pin_memory=False)
+    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size,
+                                shuffle=False, num_workers=config.num_workers, pin_memory=False)
+    test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size,
+                                 shuffle=False, num_workers=config.num_workers, pin_memory=False)
     return train_dataloader, val_dataloader, test_dataloader

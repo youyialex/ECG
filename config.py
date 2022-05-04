@@ -43,9 +43,11 @@ class Config:
         self.leads = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF',
                       'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
         self.sampling_frequency = 500
-
+        self.length=5000
         self.data_dir = '../data/ptbxl/'
         if self.experiment == 'CPSC':
             self.data_dir = '../data/CPSC/'
+            self.length=15000
+            self.batch_size=32
         elif self.experiment == 'ukbiobank':
             self.data_dir = '../data/ukbiobank/'

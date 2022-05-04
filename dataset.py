@@ -3,18 +3,18 @@ import torch
 from torch.utils.data import Dataset,DataLoader
 import pandas as pd, numpy as np
 import os, wfdb
-
 from config import Config
-def scaling(X, sigma=0.1):
-    scalingFactor = np.random.normal(loc=1.0, scale=sigma, size=(1, X.shape[1]))
-    Noise = np.matmul(np.ones((X.shape[0], 1)), scalingFactor)
-    return X * Noise
 
-def shift(sig, interval=20):
-    for col in range(sig.shape[1]):
+def scaling(signal, sigma=0.1):
+    scalingFactor = np.random.normal(loc=1.0, scale=sigma, size=(1, signal.shape[1]))
+    Noise = np.matmul(np.ones((signal.shape[0], 1)), scalingFactor)
+    return signal * Noise
+
+def shift(signal, interval=20):
+    for col in range(signal.shape[1]):
         offset = np.random.choice(range(-interval, interval))
-        sig[:, col] += offset / 1000 
-    return sig
+        signal[:, col] += offset / 1000 
+    return signal
 
 def transform(sig, train=False):
     if train:
@@ -26,11 +26,11 @@ def transform(sig, train=False):
 class ECGDataset(Dataset):
     def __init__(self, config:Config, phase, fold):
         super(ECGDataset,self).__init__()
-        self.task=config.task
+        self.length=config.length
         self.phase=phase
         self.data_dir=config.data_dir
         #read data reference
-        data=pd.read_csv(os.path.join(config.label_dir,config.task+'.csv'))
+        data=pd.read_csv(os.path.join(config.label_dir,config.experiment+'.csv'))
         #filter [length path and fold]
         self.classes = config.classes
         data=data[data['fold'].isin(fold)]
@@ -47,7 +47,7 @@ class ECGDataset(Dataset):
         row=self.data.iloc[index]
         #load data from disk
         ecg_data,_=wfdb.rdsamp(os.path.join(self.data_dir,row['path']))
-        length = 15000
+        length = self.length
         #Transform data
         ecg_data = transform(ecg_data, self.phase == 'train')
         #shape is (length, channels)
@@ -83,9 +83,9 @@ def load_datasets(config:Config):
     test_dataset = ECGDataset(config, phase='test', fold=test_folds)
     # return train_dataloader, val_dataloader, test_dataloader  
     train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size,
-                                  shuffle=False, num_workers=config.num_workers, pin_memory=False)
+                                  shuffle=False, num_workers=config.num_workers, pin_memory=True)
     val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size,
-                                shuffle=False, num_workers=config.num_workers, pin_memory=False)
+                                shuffle=False, num_workers=config.num_workers, pin_memory=True)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size,
-                                 shuffle=False, num_workers=config.num_workers, pin_memory=False)
+                                 shuffle=False, num_workers=config.num_workers, pin_memory=True)
     return train_dataloader, val_dataloader, test_dataloader

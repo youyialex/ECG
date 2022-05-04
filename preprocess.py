@@ -27,7 +27,7 @@ def CPSC_label(data_dir, task):
         '429622005': 'STD',  # ST-segment depression
         '164931005': 'STE',  # ST-segment elevation
     }
-    classes = ['SNR', 'AF', 'IAVB', 'LBBB', 'RBBB', 'PAC', 'PVC', 'STD', 'STE']
+    classes = list(set(dx_dict.values()))
     for recordpath in tqdm(recordpaths):
         patient_id = recordpath.split('/')[-1][:-4]
         _, meta_data = wfdb.rdsamp(recordpath[:-4])

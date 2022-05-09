@@ -2,5 +2,6 @@
 *.csv
 *.ipynb
 *.pth
+models/model*
 config.py
 main.py

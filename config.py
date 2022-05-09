@@ -2,7 +2,6 @@
 import torch
 import os
 
-
 class Config:
     def __init__(self, experiment):
         self.experiment = experiment
@@ -10,11 +9,11 @@ class Config:
         self.num_classes = 0
         
         # model to run
-        self.model_name = 'resnet34'
+        self.model_name = 'Net6channels'
         # up seed
         self.seed = 42
         # batch size
-        self.batch_size = 64
+        self.batch_size = 16
         # num of dataloader workers
         self.num_workers = 4
         # learning rate
@@ -44,6 +43,8 @@ class Config:
             'CPSC': 'CPSC'
         }
         self.task = tasks[experiment]
+
+
         # select ECG leads to use
         self.leads = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF',
                       'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
@@ -52,10 +53,9 @@ class Config:
         # select crop length of signal ,10s for ptbxl, 30s for CPSC
         self.length=5000
 
-
         if self.experiment == 'CPSC':
             self.data_dir = '../data/CPSC/'
-            self.length=15000
-            self.batch_size=32
+            self.length=6000
+            self.batch_size=16
         elif self.experiment == 'ukbiobank':
             self.data_dir = '../data/ukbiobank/'

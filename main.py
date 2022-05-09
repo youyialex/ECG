@@ -1,6 +1,7 @@
 from unittest import result
 import pandas as pd
 import numpy as np
+from pyparsing import col
 from tqdm import tqdm
 from config import Config
 from torch import nn, optim, seed
@@ -23,12 +24,12 @@ def init_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def train_epoch(model, optimizer, criterion, train_dataloader, device):
+def train_epoch(model, optimizer, criterion, train_dataloader, device,postfix):
     model.train()
     loss_sum, it_count = 0, 0
     y_pred = []
     y_true = []
-    for inputs, label in tqdm(train_dataloader):
+    for inputs, label in tqdm(train_dataloader,ncols=100,postfix=postfix):
         # transfer data from  cpu to gpu
         inputs, label = inputs.to(device), label.to(device)
         # forward pass
@@ -109,10 +110,11 @@ def train(config: Config):
                                + '.csv')
 
     print('>>>>training<<<<')
-    for epoch in tqdm(range(1, config.max_epoch + 1)):
+    postfix=config.model_name + '_'+config.experiment
+    for epoch in tqdm(range(1, config.max_epoch + 1),ncols=100,postfix=postfix):
 
         train_res = train_epoch(
-            model, optimizer, criterion, train_dataloader, config.device)
+            model, optimizer, criterion, train_dataloader, config.device,postfix)
 
         val_res = test_epoch(
             model, criterion, val_dataloader, config.device)
@@ -143,23 +145,13 @@ def train(config: Config):
 
 
 if __name__ == '__main__':
-    '''
-    tasks = {
-            'ptb_all': 'all',
-            'ptb_diag': 'diagnostic',
-            'ptb_diag_sub': 'diagnostic_subclass',
-            'ptb_diag_super': 'diagnostic_class',
-            'ptb_form': 'form',
-            'ptb_rhythm': 'rhythm',
-            'CPSC': 'CPSC'
-        }
-    '''
+
     for experiment in [
-        # 'CPSC',
+        'CPSC',
         'ptb_all','ptb_diag','ptb_diag_sub',
         'ptb_diag_super',
         'ptb_form','ptb_rhythm'
-        ]:
+    ]:
         config = Config(experiment)
         # create folders to save result
         os.makedirs(config.result_path, exist_ok=True)

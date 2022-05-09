@@ -6,3 +6,4 @@ from .resnet import resnet18, resnet34
 from .xresnet1d101 import xresnet1d101, xresnet1d50
 from .vit import vit
 from .resnet1d_wang import resnet1d_wang
+from .model import Net6channels,BasicNet

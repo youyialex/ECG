@@ -1,7 +1,6 @@
 from unittest import result
 import pandas as pd
 import numpy as np
-from pyparsing import col
 from tqdm import tqdm
 from config import Config
 from torch import nn, optim, seed
@@ -99,7 +98,8 @@ def train(config: Config):
     model = model.to(config.device)
 
     # setup optimizer and loss function
-    optimizer = optim.Adam(model.parameters(), lr=config.lr)
+    optimizer = optim.Adam(model.parameters(), lr=config.lr,\
+    weight_decay=config.weight_decay)
     criterion = nn.BCEWithLogitsLoss()
 
     # setup result path
@@ -147,8 +147,8 @@ def train(config: Config):
 if __name__ == '__main__':
 
     for experiment in [
-        'CPSC',
-        'ptb_all','ptb_diag','ptb_diag_sub',
+        # 'CPSC',
+        # 'ptb_all','ptb_diag','ptb_diag_sub'
         'ptb_diag_super',
         'ptb_form','ptb_rhythm'
     ]:

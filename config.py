@@ -20,6 +20,8 @@ class Config:
         self.lr = 0.0001
         # max epoch to train
         self.max_epoch = 100
+        # weight decay
+        self.weight_decay=0
         # data path
         self.data_dir = '../data/ptbxl/'
         # result path
@@ -55,7 +57,7 @@ class Config:
 
         if self.experiment == 'CPSC':
             self.data_dir = '../data/CPSC/'
-            self.length=6000
+            # self.length=6000
             self.batch_size=16
         elif self.experiment == 'ukbiobank':
             self.data_dir = '../data/ukbiobank/'

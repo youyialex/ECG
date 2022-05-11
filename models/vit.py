@@ -283,7 +283,7 @@ def vit(num_classes: int = 10, has_logits: bool = True):
     weights ported from official Google JAX impl:
     https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-vitjx/jx_vit_base_patch16_224_in21k-e5005f0a.pth
     """
-    model = VisionTransformer(img_size=1000,
+    model = VisionTransformer(img_size=5000,
                               patch_size=50,
                               embed_dim=600,
                               depth=2,

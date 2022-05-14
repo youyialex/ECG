@@ -24,7 +24,7 @@ def transform(sig, train=False):
 
 
 class ECGDataset(Dataset):
-    def __init__(self, config:Config, phase, fold):
+    def __init__(self, config:Config, phase='test', fold=list(range(1,11))):
         super(ECGDataset,self).__init__()
         self.length=config.length
         self.phase=phase
@@ -57,7 +57,7 @@ class ECGDataset(Dataset):
         result[-steps:,:]=ecg_data
         # get labels
         ecg_id=row['ecg_id']
-        if self.label_dict.get(ecg_id):
+        if self.label_dict.get(ecg_id) is not None:
             labels=self.label_dict.get(ecg_id)
         else:
             labels=row[self.classes].to_numpy(dtype=np.float32)
@@ -69,7 +69,7 @@ class ECGDataset(Dataset):
         return len(self.data)
 
 
-def split_data(seed=42):
+def split_data(seed):
     folds = range(1, 11)
     folds = np.random.RandomState(seed).permutation(folds)
     return folds[:8], folds[8:9], folds[9:]

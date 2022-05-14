@@ -1,19 +1,16 @@
-from unittest import result
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from config import Config
-from torch import nn, optim, seed
+from torch import nn, optim
 import torch
 import random
-import os
+import os, pickle
 import utility as util
-from torch.utils.data import DataLoader
-from preprocess import preprocess_label
 import models
 from dataset import load_datasets
-
-
+from preprocess import preprocess_label
+from shap_values import shap_values
 def init_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -81,10 +78,6 @@ def test_epoch(model, criterion, test_dataloader, device):
 
 
 def train(config: Config):
-    # print config info
-    print('# train device:', config.device)
-    print('# batch_size: {}  Current Learning Rate: {}'.format(
-        config.batch_size, config.lr))
     # initialize seed
     init_seed(config.seed)
 
@@ -93,8 +86,6 @@ def train(config: Config):
 
     # load model
     model = getattr(models, config.model_name)(num_classes=config.num_classes)
-    print('model_name:{}, num_classes={}'.format(
-        config.model_name, config.num_classes))
     model = model.to(config.device)
 
     # setup optimizer and loss function
@@ -109,7 +100,7 @@ def train(config: Config):
                                str(config.sampling_frequency)
                                + '.csv')
 
-    print('>>>>training<<<<')
+    print('>>>>Training<<<<')
     postfix=config.model_name + '_'+config.experiment
     for epoch in tqdm(range(1, config.max_epoch + 1),ncols=100,postfix=postfix):
 
@@ -127,8 +118,7 @@ def train(config: Config):
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-        }, os.path.join(config.checkpoints,
-                        config.experiment + '_b'+str(config.batch_size)+'.pth'))
+        }, config.checkpoint_path)
 
         result = {}
         result.update(train_res)
@@ -144,21 +134,97 @@ def train(config: Config):
             dt.to_csv(result_path, mode='a', header=False)
 
 
+def predict_find_thresholds(test_dataloader, model, device, threshold_path):
+    print('Finding optimal thresholds...')
+    if os.path.exists(threshold_path):
+        return pickle.load(open(threshold_path, 'rb'))
+    output_list, y_true = [], []
+    for _, (input, label) in enumerate(tqdm(test_dataloader)):
+        input, labels = input.to(device), label.to(device)
+        output = model(input)
+        output = torch.sigmoid(output)
+        output_list.append(output.cpu().detach().numpy())
+        y_true.append(labels.cpu().detach().numpy())
+    y_trues = np.vstack(y_true)
+    y_preds = np.vstack(output_list)
+    thresholds = []
+    for i in range(y_trues.shape[1]):
+        y_true = y_trues[:, i]
+        y_pred = y_preds[:, i]
+        threshold = util.find_threshold(y_true, y_pred)
+        thresholds.append(threshold)
+    pickle.dump(thresholds, open(threshold_path, 'wb'))
+    return thresholds
+
+def predict_result(test_loader, net, device, classes,thresholds):
+    output_list, label_list = [], []
+    for _, (input, label) in enumerate(tqdm(test_loader)):
+        input, labels = input.to(device), label.to(device)
+        output = net(input)
+        output = torch.sigmoid(output)
+        output_list.append(output.cpu().detach().numpy())
+        label_list.append(labels.cpu().detach().numpy())
+    y_trues = np.vstack(label_list)
+    y_scores = np.vstack(output_list)
+    y_preds = []
+    scores = [] 
+    for i in range(len(thresholds)):
+        y_true = y_trues[:, i]
+        y_score = y_scores[:, i]
+        y_pred = (y_score >= thresholds[i]).astype(int)
+        scores.append(util.cal_predict(y_true, y_pred, y_score,i,classes))
+        y_preds.append(y_pred)
+    y_preds = np.array(y_preds).transpose()
+    scores = np.array(scores)
+    print('Precisions:', scores[:, 0])
+    print('Recalls:', scores[:, 1])
+    print('F1s:', scores[:, 2])
+    print('AUCs:', scores[:, 3])
+    print('Accs:', scores[:, 4])
+    print(np.mean(scores, axis=0))
+    util.plot_cm(y_trues, y_preds,classes)
+
+def predict(config:Config):
+    print('>>>>Predicting<<<<')
+    # initialize seed
+    init_seed(config.seed)
+    # load datasets
+    train_dataloader, val_dataloader, test_dataloader = load_datasets(config)
+    # load model
+    model = getattr(models, config.model_name)(num_classes=config.num_classes)
+    model = model.to(config.device)
+    model.load_state_dict(torch.load(config.checkpoint_path,\
+         map_location=config.device)['model_state_dict'])
+    model.eval()
+    thresholds = predict_find_thresholds(train_dataloader, model, config.device,config.threshold_path)
+    print('Thresholds:', thresholds)
+    print('Results on validation data:')
+    predict_result(val_dataloader, model, config.device,config.classes, thresholds)
+
+
 if __name__ == '__main__':
 
     for experiment in [
         # 'CPSC',
-        # 'ptb_all','ptb_diag','ptb_diag_sub'
-        'ptb_diag_super',
-        'ptb_form','ptb_rhythm'
+        # 'ptb_all',
+        # 'ptb_diag',
+        # 'ptb_diag_sub'
+        # 'ptb_diag_super',
+        # 'ptb_form',
+        'ptb_rhythm'
     ]:
+        # preprocess data
         config = Config(experiment)
-        # create folders to save result
-        os.makedirs(config.result_path, exist_ok=True)
-        os.makedirs(config.checkpoints, exist_ok=True)
-        os.makedirs(config.label_dir, exist_ok=True)
-        # preprocess label
-        config.classes = preprocess_label(config)
-        config.num_classes = len(config.classes)
+        config.classes=preprocess_label(config)
+        config.num_classes=len(config.classes)
+        # print config info
+        print('Device:', config.device)
+        print(f'Batch_size: {config.batch_size}  Current Learning Rate: {config.lr}')
+        print(f'Model_name:{config.model_name}, Num_classes={config.num_classes}')
+        
         # train with config pareters
-        train(config=config)
+        # train(config=config)
+
+        # predict
+        predict(config=config)
+        # shap_values(config=config)

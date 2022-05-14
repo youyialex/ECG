@@ -9,11 +9,11 @@ class Config:
         self.num_classes = 0
         
         # model to run
-        self.model_name = 'Net6channels'
+        self.model_name = 'resnet34'
         # up seed
         self.seed = 42
         # batch size
-        self.batch_size = 16
+        self.batch_size = 64
         # num of dataloader workers
         self.num_workers = 4
         # learning rate
@@ -28,6 +28,10 @@ class Config:
         self.result_path = os.path.join('result/', self.experiment)
         # model checkpoint path
         self.checkpoints = os.path.join('checkpoints/', self.model_name)
+        self.checkpoint_path=os.path.join(self.checkpoints,\
+            self.experiment + '_b'+str(self.batch_size)+'.pth')
+        self.threshold_path = os.path.join('threshholds/',\
+            self.experiment +' '+self.model_name + '_b'+str(self.batch_size)+'.pth')
         # date label path
         self.label_dir = 'data_label/'
         # device
@@ -58,6 +62,15 @@ class Config:
         if self.experiment == 'CPSC':
             self.data_dir = '../data/CPSC/'
             # self.length=6000
-            self.batch_size=16
+            self.batch_size=32
         elif self.experiment == 'ukbiobank':
             self.data_dir = '../data/ukbiobank/'
+
+        # create folders to save result
+        os.makedirs(self.result_path, exist_ok=True)
+        os.makedirs(self.checkpoints, exist_ok=True)
+        os.makedirs(self.label_dir, exist_ok=True)
+        os.makedirs('threshholds/',exist_ok=True)
+        os.makedirs('plot/cm',exist_ok=True)
+        os.makedirs('shap/individuals',exist_ok=True)
+    

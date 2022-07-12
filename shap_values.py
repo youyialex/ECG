@@ -113,7 +113,7 @@ def shap_values(config:Config):
     dataset=ECGDataset(config)
     background_inputs = torch.stack([dataset[input][0] for input in to_explain]).to(config.device)
 
-    result_path = f'shap/A{background}.npy'
+    result_path = f'shap/{config.experiment}.npy'
     if not os.path.exists(result_path):
         print('>>>>Training Shap Model<<<<<')
         svs = []

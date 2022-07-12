@@ -50,6 +50,28 @@ def train_epoch(model, optimizer, criterion, train_dataloader, device,postfix):
     result.update(util.cal_train(y_true, y_pred))
     return result
 
+def val_epoch(model, criterion, test_dataloader, device):
+    model.eval()
+    loss_sum, it_count = 0, 0
+    y_pred = []
+    y_true = []
+    with torch.no_grad():
+        for inputs, label in test_dataloader:
+            # transfer data from  cpu to gpu
+            inputs, label = inputs.to(device), label.to(device)
+            # forward pass
+            output = model(inputs)
+            # caculate loss
+            loss = criterion(output, label)
+            # append loss
+            loss_sum += loss.item()
+            it_count += 1
+            # append result
+            output = torch.sigmoid(output)
+            y_pred.append(output.cpu().numpy())
+            y_true.append(label.cpu().numpy())
+    result={'val_loss': loss_sum / it_count}
+    return result
 
 def test_epoch(model, criterion, test_dataloader, device):
     model.eval()
@@ -100,6 +122,10 @@ def train(config: Config):
                                str(config.sampling_frequency)
                                + '.csv')
 
+    # Early stopping
+    last_loss = 100
+    patience = 2
+    triggertimes = 0
     print('>>>>Training<<<<')
     postfix=config.model_name + '_'+config.experiment
     for epoch in tqdm(range(1, config.max_epoch + 1),ncols=100,postfix=postfix):
@@ -107,7 +133,7 @@ def train(config: Config):
         train_res = train_epoch(
             model, optimizer, criterion, train_dataloader, config.device,postfix)
 
-        val_res = test_epoch(
+        val_res = val_epoch(
             model, criterion, val_dataloader, config.device)
 
         test_res = test_epoch(
@@ -122,7 +148,6 @@ def train(config: Config):
 
         result = {}
         result.update(train_res)
-        print(val_res)
         # result.update(val_res)
         result.update(test_res)
         # save result
@@ -133,6 +158,15 @@ def train(config: Config):
         else:
             dt.to_csv(result_path, mode='a', header=False)
 
+        #early stopping    
+        if val_res['val_loss']>last_loss:
+            trigger_times += 1
+            if trigger_times >= patience:
+                print('Early stopping!\nStart to test process.')
+                return 
+        else:
+            trigger_times = 0
+        last_loss = val_res['val_loss']
 
 def predict_find_thresholds(test_dataloader, model, device, threshold_path):
     print('Finding optimal thresholds...')
@@ -211,7 +245,7 @@ if __name__ == '__main__':
         # 'ptb_diag_sub'
         # 'ptb_diag_super',
         # 'ptb_form',
-        'ptb_rhythm'
+        # 'ptb_rhythm'
     ]:
         # preprocess data
         config = Config(experiment)

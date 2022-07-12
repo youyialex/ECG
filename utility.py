@@ -27,7 +27,7 @@ def compute_TPR(y_true, y_pred):
     return sum / count
 
 def cal_train(y_true, y_pred):
-    # expand result from N*2d to 2d array
+    # expand result from N*(2d array) to (N*2d) array
     y_true = np.vstack(y_true)
     y_pred = np.vstack(y_pred)
     result={}
@@ -36,11 +36,12 @@ def cal_train(y_true, y_pred):
 
 
 def cal_test(y_true, y_pred):
-    # expand result from N*2d to 2d array
+    # expand result from N*(2d array) to (N*2d) array
     y_true = np.vstack(y_true)
     y_pred = np.vstack(y_pred)
     result={}
     result['test_auc'] = roc_auc_score(y_true, y_pred, average='macro')
+    result['test_prc']=average_precision_score(y_true, y_pred)
     # result['test_precision'] = precision_score(y_true, y_pred)
     # result['test_recall'] = recall_score(y_true, y_pred)
     # result['test_f1'] = f1_score(y_true, y_pred)
@@ -114,6 +115,5 @@ def aggregate_diagnostic(y_dic,agg_df,task):
                 tmp.append(agg_df.loc[key,task])
             else:
                 tmp.append(key)
-    # string=','.join(list(set(tmp)))  
     return list(set(tmp))
     

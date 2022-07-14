@@ -26,6 +26,9 @@ def transform(sig, train=False):
 class ECGDataset(Dataset):
     def __init__(self, config:Config, phase='test', fold=list(range(1,11))):
         super(ECGDataset,self).__init__()
+        if 'ukbb' in config.experiment:
+            self.start = config.start_exercise
+        else: self.start = 0    
         self.length=config.length
         self.phase=phase
         self.data_dir=config.data_dir
@@ -48,11 +51,12 @@ class ECGDataset(Dataset):
         #load data from disk
         ecg_data,_=wfdb.rdsamp(os.path.join(self.data_dir,row['path']))
         length = self.length
+        ecg_data=ecg_data[self.start:self.start+length,self.leads]
         #Transform data
         ecg_data = transform(ecg_data, self.phase == 'train')
         #shape is (length, channels)
         steps=ecg_data.shape[0]
-        ecg_data=ecg_data[-length:,self.leads]
+        ecg_data=ecg_data[-length:,:]
         result=np.zeros((length,len(self.leads)))
         result[-steps:,:]=ecg_data
         # get labels
@@ -88,4 +92,5 @@ def load_datasets(config:Config):
                                 shuffle=False, num_workers=config.num_workers, pin_memory=True)
     test_dataloader = DataLoader(test_dataset, batch_size=config.batch_size,
                                  shuffle=False, num_workers=config.num_workers, pin_memory=True)
+    print(f'Leads selection: {config.leads}\nLength: {config.length}')
     return train_dataloader, val_dataloader, test_dataloader

@@ -141,9 +141,9 @@ class XResNet(nn.Sequential):
 
 
 def xresnet1d101(**kwargs):
-    return XResNet(ResBlock, 4, [3, 4, 23, 3], input_channels=12, **kwargs)
+    return XResNet(ResBlock, 4, [3, 4, 23, 3], **kwargs)
 
 
 def xresnet1d50(**kwargs):
-    return XResNet(ResBlock, 4, [3, 4, 6, 3], input_channels=12, **kwargs)
+    return XResNet(ResBlock, 4, [3, 4, 6, 3], **kwargs)
 

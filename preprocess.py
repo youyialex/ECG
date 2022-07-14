@@ -92,7 +92,16 @@ def ptbxl_label(data_dir, task, sample_freq):
 
 def ukbiobank_label(data_dir, task):
     # TODO:generate label csv
-    return data_dir
+    df=pd.read_csv(os.path.join(data_dir, task+'.csv'))
+    # assign folder number
+    n = len(df)
+    folds = np.zeros(n, dtype=np.int8)
+    for i in range(10):
+        start = int(n * i / 10)
+        end = int(n * (i + 1) / 10)
+        folds[start:end] = i + 1
+    df['fold'] = np.random.permutation(folds)
+    return df
 
 
 def preprocess_label(config: Config):
@@ -104,7 +113,7 @@ def preprocess_label(config: Config):
     # if label csv not exists, generate label csv
     elif config.task == 'CPSC':
         label = CPSC_label(config.data_dir, config.task)
-    elif config.task == 'ukbiobank':
+    elif config.task in ['exercise_0']:
         label = ukbiobank_label(config.data_dir, config.task)
     else:
         label = ptbxl_label(config.data_dir, config.task,

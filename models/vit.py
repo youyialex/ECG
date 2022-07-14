@@ -276,7 +276,7 @@ def _init_vit_weights(m):
         nn.init.ones_(m.weight)
 
 
-def vit(num_classes: int = 10, has_logits: bool = True):
+def vit(num_classes: int = 10, input_channels=12,has_logits: bool = True):
     """
     ViT-Base model (ViT-B/16) from original paper (https://arxiv.org/abs/2010.11929).
     ImageNet-21k weights @ 224x224, source https://github.com/google-research/vision_transformer.
@@ -287,6 +287,7 @@ def vit(num_classes: int = 10, has_logits: bool = True):
                               patch_size=50,
                               embed_dim=600,
                               depth=2,
+                              in_c=input_channels,
                               num_heads=12,
                               representation_size=512 if has_logits else None,
                               num_classes=num_classes)

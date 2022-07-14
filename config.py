@@ -4,10 +4,6 @@ import os
 
 class Config:
     def __init__(self, experiment):
-        self.experiment = experiment
-        self.classes = []
-        self.num_classes = 0
-        
         # model to run
         self.model_name = 'resnet34'
         # up seed
@@ -22,6 +18,14 @@ class Config:
         self.max_epoch = 100
         # weight decay
         self.weight_decay=0
+        # Early stopping
+        self.last_loss = 100
+        self.patience = 3
+        self.trigger_times = 0
+        # classes to predict
+        self.experiment = experiment
+        self.classes = []
+        self.num_classes = 0
         # data path
         self.data_dir = '../data/ptbxl/'
         # result path
@@ -46,7 +50,8 @@ class Config:
             'ptb_diag_super': 'diagnostic_class',
             'ptb_form': 'form',
             'ptb_rhythm': 'rhythm',
-            'CPSC': 'CPSC'
+            'CPSC': 'CPSC',
+            'ukbb_0':'exercise_0'
         }
         self.task = tasks[experiment]
 
@@ -63,8 +68,14 @@ class Config:
             self.data_dir = '../data/CPSC/'
             # self.length=6000
             self.batch_size=32
-        elif self.experiment == 'ukbiobank':
+        elif self.experiment in ['ukbb_0']:
+            self.length=5000
+            self.sampling_frequency = 500
             self.data_dir = '../data/ukbiobank/'
+            self.leads = ['I',  'II', 'III']
+            self.start_rest=int(self.sampling_frequency*405)
+            self.start_exercise=int(self.sampling_frequency*150)
+
 
         # create folders to save result
         os.makedirs(self.result_path, exist_ok=True)

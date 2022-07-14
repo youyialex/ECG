@@ -107,7 +107,7 @@ def train(config: Config):
     train_dataloader, val_dataloader, test_dataloader = load_datasets(config)
 
     # load model
-    model = getattr(models, config.model_name)(num_classes=config.num_classes)
+    model = getattr(models, config.model_name)(num_classes=config.num_classes, input_channels=len(config.leads))
     model = model.to(config.device)
 
     # setup optimizer and loss function
@@ -122,10 +122,6 @@ def train(config: Config):
                                str(config.sampling_frequency)
                                + '.csv')
 
-    # Early stopping
-    last_loss = 100
-    patience = 2
-    triggertimes = 0
     print('>>>>Training<<<<')
     postfix=config.model_name + '_'+config.experiment
     for epoch in tqdm(range(1, config.max_epoch + 1),ncols=100,postfix=postfix):
@@ -148,7 +144,7 @@ def train(config: Config):
 
         result = {}
         result.update(train_res)
-        # result.update(val_res)
+        result.update(val_res)
         result.update(test_res)
         # save result
         dt = pd.DataFrame(result,index=[epoch])
@@ -159,14 +155,14 @@ def train(config: Config):
             dt.to_csv(result_path, mode='a', header=False)
 
         #early stopping    
-        if val_res['val_loss']>last_loss:
-            trigger_times += 1
-            if trigger_times >= patience:
+        if val_res['val_loss']>config.last_loss:
+            config.trigger_times += 1
+            if config.trigger_times >= config.patience:
                 print('Early stopping!\nStart to test process.')
                 return 
         else:
-            trigger_times = 0
-        last_loss = val_res['val_loss']
+            config.trigger_times = 0
+        config.last_loss = val_res['val_loss']
 
 def predict_find_thresholds(test_dataloader, model, device, threshold_path):
     print('Finding optimal thresholds...')
@@ -225,7 +221,7 @@ def predict(config:Config):
     # load datasets
     train_dataloader, val_dataloader, test_dataloader = load_datasets(config)
     # load model
-    model = getattr(models, config.model_name)(num_classes=config.num_classes)
+    model = getattr(models, config.model_name)(num_classes=config.num_classes, input_channels=len(config.leads))
     model = model.to(config.device)
     model.load_state_dict(torch.load(config.checkpoint_path,\
          map_location=config.device)['model_state_dict'])
@@ -246,6 +242,7 @@ if __name__ == '__main__':
         # 'ptb_diag_super',
         # 'ptb_form',
         # 'ptb_rhythm'
+        'ukbb_0'
     ]:
         # preprocess data
         config = Config(experiment)
@@ -257,8 +254,10 @@ if __name__ == '__main__':
         print(f'Model_name:{config.model_name}, Num_classes={config.num_classes}')
         
         # train with config pareters
-        # train(config=config)
+        train(config=config)
 
         # predict
         predict(config=config)
+
+        # shap values
         # shap_values(config=config)

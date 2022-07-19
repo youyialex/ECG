@@ -241,23 +241,24 @@ if __name__ == '__main__':
         # 'ptb_diag_sub'
         # 'ptb_diag_super',
         # 'ptb_form',
-        # 'ptb_rhythm'
-        'ukbb_0'
+        # 'ptb_rhythm',
+        # 'ukbb_0',
+        'ukbb_st',
     ]:
         # preprocess data
         config = Config(experiment)
         config.classes=preprocess_label(config)
         config.num_classes=len(config.classes)
         # print config info
-        print('Device:', config.device)
+        print(f'Device: {config.device}')
         print(f'Batch_size: {config.batch_size}  Current Learning Rate: {config.lr}')
         print(f'Model_name:{config.model_name}, Num_classes={config.num_classes}')
         
         # train with config pareters
-        train(config=config)
+        # train(config=config)
 
         # predict
-        predict(config=config)
+        # predict(config=config)
 
         # shap values
         # shap_values(config=config)

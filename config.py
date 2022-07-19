@@ -26,8 +26,6 @@ class Config:
         self.experiment = experiment
         self.classes = []
         self.num_classes = 0
-        # data path
-        self.data_dir = '../data/ptbxl/'
         # result path
         self.result_path = os.path.join('result/', self.experiment)
         # model checkpoint path
@@ -42,8 +40,16 @@ class Config:
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
 
+        # data path
+        self.dirs= {
+            'ptbxl':'../data/ptbxl/',
+            'ukbiobank':'../data/ukbiobank/',
+            'CPSC':'../data/CPSC/',
+        }       
+        self.data_dir = self.dirs['ptbxl']
+
         #select in between ptbxl tasks
-        tasks = {
+        self.tasks = {
             'ptb_all': 'all',
             'ptb_diag': 'diagnostic',
             'ptb_diag_sub': 'diagnostic_subclass',
@@ -51,9 +57,10 @@ class Config:
             'ptb_form': 'form',
             'ptb_rhythm': 'rhythm',
             'CPSC': 'CPSC',
-            'ukbb_0':'exercise_0'
+            'ukbb_0':'exercise_0',
+            'ukbb_st':'st_feature',
         }
-        self.task = tasks[experiment]
+        self.task = self.tasks[experiment]
 
 
         # select ECG leads to use
@@ -65,14 +72,21 @@ class Config:
         self.length=5000
 
         if self.experiment == 'CPSC':
-            self.data_dir = '../data/CPSC/'
+            self.data_dir = self.dirs['CPSC']
             # self.length=6000
             self.batch_size=32
         elif self.experiment in ['ukbb_0']:
             self.length=5000
             self.sampling_frequency = 500
-            self.data_dir = '../data/ukbiobank/'
+            self.data_dir = self.dirs['ukbiobank']
             self.leads = ['I',  'II', 'III']
+            self.start_rest=int(self.sampling_frequency*405)
+            self.start_exercise=int(self.sampling_frequency*150)
+        elif self.experiment in ['ukbb_st']:
+            self.length=5000
+            self.sampling_frequency = 500
+            self.data_dir = self.dirs['ukbiobank']
+            self.leads = ['I']
             self.start_rest=int(self.sampling_frequency*405)
             self.start_exercise=int(self.sampling_frequency*150)
 

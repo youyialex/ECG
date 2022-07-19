@@ -46,7 +46,7 @@ def cal_test(y_true, y_pred):
     # result['test_recall'] = recall_score(y_true, y_pred)
     # result['test_f1'] = f1_score(y_true, y_pred)
     result['test_mAP'] = compute_mAP(y_true, y_pred)
-    result['test_TPR'] = compute_TPR(y_true, y_pred)
+    # result['test_TPR'] = compute_TPR(y_true, y_pred)
     return result
 
 def cal_predict(y_true, y_pred, y_score,i,classes):

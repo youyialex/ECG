@@ -1,6 +1,4 @@
 import ast
-from torch import classes
-from wandb import Classes
 from config import Config
 import os
 from glob import glob
@@ -71,7 +69,7 @@ def ptbxl_label(data_dir, task, sample_freq):
     print(classes)
     # select corresponding sample frequency file
     file_path = 'filename_hr'if sample_freq == 500 else 'filename_lr'
-    for _, row in tqdm(database.iterrows(),total=database.shape[0]):
+    for _, row in tqdm(database.iterrows(), total=database.shape[0]):
         _, meta_data = wfdb.rdsamp(os.path.join(data_dir, row[file_path]))
         sample_rate = meta_data['fs']
         length = meta_data['sig_len']
@@ -91,8 +89,8 @@ def ptbxl_label(data_dir, task, sample_freq):
 
 
 def ukbiobank_label(data_dir, task):
-    # TODO:generate label csv
-    df=pd.read_csv(os.path.join(data_dir, task+'.csv'))
+    df = pd.read_csv(os.path.join(data_dir, task+'.csv'))
+    df.drop(columns=['Norm'], inplace=True)
     # assign folder number
     n = len(df)
     folds = np.zeros(n, dtype=np.int8)
@@ -104,17 +102,55 @@ def ukbiobank_label(data_dir, task):
     return df
 
 
+def st_label(config: Config):
+
+    # read CPSC label data
+    CPSC_csv = os.path.join(config.label_dir, 'CPSC.csv')
+    if os.path.exists(CPSC_csv):
+        CPSC = pd.read_csv(CPSC_csv)
+    else:
+        CPSC = CPSC_label(config.dirs['CPSC'], config.tasks['CPSC'])
+
+    # read ptbxl label data
+    ptbxl_csv = os.path.join(config.label_dir, 'ptb_diag_sub.csv')
+    if os.path.exists(ptbxl_csv):
+        ptbxl = pd.read_csv(ptbxl_csv)
+    else:
+        ptbxl = ptbxl_label(
+            config.dirs['ptbxl'], config.tasks['ptb_diag_sub'], sample_freq=500)
+
+    CPSC['ST_abnormal']=CPSC[['STD', 'STE']].any(axis=1).astype(int)
+    CPSC['path']=CPSC['path'].apply(lambda x: os.path.join(config.dirs['CPSC'], x))
+    ptbxl['ST_abnormal']=ptbxl[['NST_', 'ISCA', 'ISCI', 'ISC_']].any(axis=1).astype(int)
+    ptbxl['path']=ptbxl['path'].apply(lambda x: os.path.join(config.dirs['ptbxl'], x))
+    
+    CPSC = CPSC[['ecg_id','ST_abnormal', 'length', 'sample_rate', 'path']]
+    ptbxl = ptbxl[['ecg_id', 'ST_abnormal', 'length', 'sample_rate', 'path']]
+    df=pd.concat([CPSC, ptbxl],ignore_index=True)
+    n = len(df)
+    folds = np.zeros(n, dtype=np.int8)
+    for i in range(10):
+        start = int(n * i / 10)
+        end = int(n * (i + 1) / 10)
+        folds[start:end] = i + 1
+    df['fold'] = np.random.permutation(folds)
+    return df
+
 def preprocess_label(config: Config):
     label_csv = os.path.join(config.label_dir, config.experiment+'.csv')
     print('Preprocessing label...')
     # if label csv exists, read corresponding csv
     if os.path.exists(label_csv):
         label = pd.read_csv(label_csv)
-    # if label csv not exists, generate label csv
+    # if CPSC csv not exists, generate label csv
     elif config.task == 'CPSC':
         label = CPSC_label(config.data_dir, config.task)
+    # if UKBB csv not exists, generate label csv
     elif config.task in ['exercise_0']:
         label = ukbiobank_label(config.data_dir, config.task)
+    # if PTBXL csv not exists, generate label csv
+    elif config.task in ['st_feature']:
+        label = st_label(config)
     else:
         label = ptbxl_label(config.data_dir, config.task,
                             config.sampling_frequency)
@@ -125,5 +161,5 @@ def preprocess_label(config: Config):
         ['ecg_id', 'length', 'sample_rate', 'path', 'fold'])
     print('Diagnosis Count:\n', label[classes].sum())
     print('ECG Count:\t', len(label))
-    print('Total classes:\t',len(classes))
+    print('Total classes:\t', len(classes))
     return classes.to_list()

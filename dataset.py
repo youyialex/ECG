@@ -34,7 +34,7 @@ def transform(sig, train=False):
 class ECGDataset(Dataset):
     def __init__(self, config: Config, phase='test', fold=list(range(1, 11))):
         super(ECGDataset, self).__init__()
-        if 'ukbb' in config.experiment:
+        if 'exercise' in config.task:
             self.start = config.start_exercise
         else:
             self.start = 0
@@ -48,6 +48,7 @@ class ECGDataset(Dataset):
         self.classes = config.classes
         data = data[data['fold'].isin(fold)]
         self.data = data
+        self.task = config.task
         # select leads
         leads = ['I', 'II', 'III', 'aVR', 'aVL',
                  'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
@@ -59,7 +60,10 @@ class ECGDataset(Dataset):
     def __getitem__(self, index: int):
         row = self.data.iloc[index]
         # load data from disk
-        ecg_data, _ = wfdb.rdsamp(os.path.join(self.data_dir, row['path']))
+        if self.task == 'st_feature':
+            ecg_data, _ = wfdb.rdsamp(row['path'])
+        else:
+            ecg_data, _ = wfdb.rdsamp(os.path.join(self.data_dir, row['path']))
         length = self.length
         ecg_data = ecg_data[self.start:self.start+length, self.leads]
         # Transform data

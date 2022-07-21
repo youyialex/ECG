@@ -255,7 +255,7 @@ if __name__ == '__main__':
         print(f'Model_name:{config.model_name}, Num_classes={config.num_classes}')
         
         # train with config pareters
-        # train(config=config)
+        train(config=config)
 
         # predict
         # predict(config=config)

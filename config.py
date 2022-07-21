@@ -87,8 +87,8 @@ class Config:
             self.sampling_frequency = 500
             self.data_dir = self.dirs['ukbiobank']
             self.leads = ['I']
-            self.start_rest=int(self.sampling_frequency*405)
-            self.start_exercise=int(self.sampling_frequency*150)
+            self.start_rest=0#int(self.sampling_frequency*405)
+            self.start_exercise=0#int(self.sampling_frequency*150)
 
 
         # create folders to save result

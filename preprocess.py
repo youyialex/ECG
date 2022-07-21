@@ -119,14 +119,17 @@ def st_label(config: Config):
         ptbxl = ptbxl_label(
             config.dirs['ptbxl'], config.tasks['ptb_diag_sub'], sample_freq=500)
 
-    CPSC['ST_abnormal']=CPSC[['STD', 'STE']].any(axis=1).astype(int)
-    CPSC['path']=CPSC['path'].apply(lambda x: os.path.join(config.dirs['CPSC'], x))
-    ptbxl['ST_abnormal']=ptbxl[['NST_', 'ISCA', 'ISCI', 'ISC_']].any(axis=1).astype(int)
-    ptbxl['path']=ptbxl['path'].apply(lambda x: os.path.join(config.dirs['ptbxl'], x))
-    
-    CPSC = CPSC[['ecg_id','ST_abnormal', 'length', 'sample_rate', 'path']]
+    CPSC['ST_abnormal'] = CPSC[['STD', 'STE']].any(axis=1).astype(int)
+    CPSC['path'] = CPSC['path'].apply(
+        lambda x: os.path.join(config.dirs['CPSC'], x))
+    ptbxl['ST_abnormal'] = ptbxl[['NST_', 'ISCA',
+                                  'ISCI', 'ISC_']].any(axis=1).astype(int)
+    ptbxl['path'] = ptbxl['path'].apply(
+        lambda x: os.path.join(config.dirs['ptbxl'], x))
+
+    CPSC = CPSC[['ecg_id', 'ST_abnormal', 'length', 'sample_rate', 'path']]
     ptbxl = ptbxl[['ecg_id', 'ST_abnormal', 'length', 'sample_rate', 'path']]
-    df=pd.concat([CPSC, ptbxl],ignore_index=True)
+    df = pd.concat([CPSC, ptbxl], ignore_index=True)
     n = len(df)
     folds = np.zeros(n, dtype=np.int8)
     for i in range(10):

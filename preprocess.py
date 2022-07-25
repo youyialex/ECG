@@ -151,9 +151,12 @@ def preprocess_label(config: Config):
     # if UKBB csv not exists, generate label csv
     elif config.task in ['exercise_0']:
         label = ukbiobank_label(config.data_dir, config.task)
-    # if PTBXL csv not exists, generate label csv
+    elif config.task in ['exercise_feature']:
+            label = ukbiobank_label(config.data_dir, 'exercise_0')
+    # if st patient data collection not exists, generate label csv
     elif config.task in ['st_feature']:
         label = st_label(config)
+    # if PTBXL csv not exists, generate label csv
     else:
         label = ptbxl_label(config.data_dir, config.task,
                             config.sampling_frequency)

@@ -44,7 +44,9 @@ class ResNet1d(nn.Module):
         self.layer4 = self._make_layer(BasicBlock1d, 512, layers[3], stride=2)
         self.adaptiveavgpool = nn.AdaptiveAvgPool1d(1)
         self.adaptivemaxpool = nn.AdaptiveMaxPool1d(1)
-        self.fc = nn.Linear(512 * block.expansion * 2, num_classes)
+        self.feature_count=15
+        self.feature = nn.Linear(512 * block.expansion * 2, self.feature_count)
+        self.fc = nn.Linear(self.feature_count, num_classes)
         self.dropout = nn.Dropout(0.2)
     
     def _make_layer(self, block, planes, blocks, stride=1):
@@ -76,6 +78,7 @@ class ResNet1d(nn.Module):
         x2 = self.adaptivemaxpool(x)
         x = torch.cat((x1, x2), dim=1)
         x = x.view(x.size(0), -1)
+        x = self.feature(x)
         return self.fc(x)
 
 

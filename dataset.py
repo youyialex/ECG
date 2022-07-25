@@ -35,7 +35,7 @@ class ECGDataset(Dataset):
     def __init__(self, config: Config, phase='test', fold=list(range(1, 11))):
         super(ECGDataset, self).__init__()
         if 'exercise' in config.task:
-            self.start = config.start_exercise
+            self.start = config.start
         else:
             self.start = 0
         self.length = config.length
@@ -47,7 +47,7 @@ class ECGDataset(Dataset):
         # filter [length path and fold]
         self.classes = config.classes
         data = data[data['fold'].isin(fold)]
-        self.data = data
+        self.data = data#.loc[:100]  # subset
         self.task = config.task
         # select leads
         leads = ['I', 'II', 'III', 'aVR', 'aVL',
@@ -80,8 +80,13 @@ class ECGDataset(Dataset):
         else:
             labels = row[self.classes].to_numpy(dtype=np.float32)
             self.label_dict[ecg_id] = labels
-        return torch.from_numpy(result.transpose()).float(),\
-            torch.from_numpy(labels).float()
+
+        if self.task == 'exercise_feature':
+            return torch.from_numpy(result.transpose()).float(),\
+                row['path']
+        else:
+            return torch.from_numpy(result.transpose()).float(),\
+                torch.from_numpy(labels).float()
 
     def __len__(self):
         return len(self.data)
@@ -109,3 +114,11 @@ def load_datasets(config: Config):
                                  shuffle=False, num_workers=config.num_workers, pin_memory=True)
     print(f'Leads selection: {config.leads}\nLength: {config.length}')
     return train_dataloader, val_dataloader, test_dataloader
+
+
+def load_feature_input(config: Config):
+    fold = range(1, 11)
+    dataset = ECGDataset(config, phase='test', fold=fold)
+    test_dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False,
+                                 num_workers=config.num_workers, pin_memory=True)
+    return test_dataloader

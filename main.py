@@ -8,7 +8,7 @@ import random
 import os, pickle
 import utility as util
 import models
-from dataset import load_datasets
+from dataset import load_datasets,load_feature_input
 from preprocess import preprocess_label
 from shap_values import shap_values
 def init_seed(seed):
@@ -214,6 +214,49 @@ def predict_result(test_loader, net, device, classes,thresholds):
     print(np.mean(scores, axis=0))
     util.plot_cm(y_trues, y_preds,classes)
 
+def feature_extract(config:Config):
+    print('>>>>Extracting Features<<<<')
+    # initialize seed
+    init_seed(config.seed)
+    model = getattr(models, config.model_name)(num_classes=config.num_classes, input_channels=len(config.leads))
+    model = model.to(config.device)
+    model.load_state_dict(torch.load(config.checkpoint_path,\
+         map_location=config.device)['model_state_dict'])
+    model.eval()
+
+    # register hook
+    feature_map = []
+    def feature_hook(module, input, output):
+        feature_map.append(output.cpu().detach().numpy()) 
+    for (name, module) in model.named_modules():
+        if name == 'feature':
+    	    # register a hook for hook
+            module.register_forward_hook(feature_hook)
+
+
+    dataloader = load_feature_input(config)
+    output_list, index_list = [], []
+    for _, (input, index) in enumerate(tqdm(dataloader)):
+        input = input.to(config.device)
+        output = model(input)
+        output = torch.sigmoid(output)
+        output_list.append(output.cpu().detach().numpy())
+        index_list.append(index)
+        
+    # y_scores = np.vstack(output_list)
+    y_scores = np.vstack(feature_map)
+    index_list=[i for k in index_list for i in k]
+
+    result= pd.DataFrame(y_scores,columns=['feature'])
+    # result= pd.concat([result,pd.DataFrame(y_features)],axis=1)
+    temp=pd.DataFrame(index_list,columns=['index'])
+    temp['index']=temp['index'].apply(lambda x:int(x.split('/')[-1]))
+    result.set_index(temp['index'],drop=True, inplace=True)
+    result.index.name = 'eid'
+    result=result.add_prefix('Deep_Feature_') 
+    result.sort_index(inplace=True)
+    result.to_csv('../ukbb_ef/deep_feature.csv')
+
 def predict(config:Config):
     print('>>>>Predicting<<<<')
     # initialize seed
@@ -243,7 +286,8 @@ if __name__ == '__main__':
         # 'ptb_form',
         # 'ptb_rhythm',
         # 'ukbb_0',
-        'ukbb_st',
+        # 'ukbb_st',
+        'ukbb_feature',
     ]:
         # preprocess data
         config = Config(experiment)
@@ -255,10 +299,13 @@ if __name__ == '__main__':
         print(f'Model_name:{config.model_name}, Num_classes={config.num_classes}')
         
         # train with config pareters
-        train(config=config)
+        # train(config=config)
 
         # predict
         # predict(config=config)
 
         # shap values
         # shap_values(config=config)
+
+        # feature extract
+        feature_extract(config=config)
